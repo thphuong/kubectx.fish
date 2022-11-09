@@ -6,7 +6,7 @@ function __kubens_current
 end
 
 function __kubens_all
-    kubectl get namespace -oname | cut -d/ -f2 | awk '/^'(__kubens_current)'$/ { sub($0, "\033[0;33m" $0 "\033[0;37m") }1'
+    kubectl get namespace -oname | cut -d/ -f2 | awk '/^'(__kubens_current)'$/ { sub($0, "\033[0;33m" $0 "\033[0m") }1'
 end
 
 function __kubens_set

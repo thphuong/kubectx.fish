@@ -3,7 +3,7 @@ function __kubectx_current
 end
 
 function __kubectx_all
-    kubectl config get-contexts -oname | awk '/^'(__kubectx_current)'$/ { sub($0, "\033[0;33m" $0 "\033[0;37m") }1'
+    kubectl config get-contexts -oname | awk '/^'(__kubectx_current)'$/ { sub($0, "\033[0;33m" $0 "\033[0m") }1'
 end
 
 function __kubectx_set
