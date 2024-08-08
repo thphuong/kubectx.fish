@@ -1,9 +1,12 @@
-function __fish_kubectx_arg_number -a number
-    set -l cmd (commandline -opc)
-    test (count $cmd) -eq $number
-end
-
 complete -f -c kubectx
-complete -f -x -c kubectx -n '__fish_kubectx_arg_number 1' -a "(kubectl config get-contexts --output='name')"
-complete -f -x -c kubectx -n '__fish_kubectx_arg_number 1' -s c -l current -d "show the current namespace"
-complete -f -x -c kubectx -n '__fish_kubectx_arg_number 1' -s h -l help -d "show the help message"
+complete -f -c kubectx -l cache_dir -d "show the current namespace"
+complete -f -c kubectx -a "-c --current" -d "show the current namespace"
+complete -f -c kubectx -l "-e --cache-expires-in" -d "show the current namespace"
+complete -f -c kubectx -l no-cache -d "do not use cache"
+complete -f -c kubectx -a "-g --global" -d "set the context globally"
+complete -f -c kubectx -a "-h --help" -d "show the help message"
+complete -f -c kubectx -a "-i --interactive" -d "select context interactively"
+complete -f -c kubectx -a "-l --list" -d "show all kubeconfig files"
+complete -f -c kubectx -a "-p --path" -d "show the kubeconfig path variable"
+complete -f -c kubectx -a "-s --show" -d "show the kubeconfig for a context"
+complete -f -c kubectx -n "[ (count (commandline -opc | string replace -ar '\-{1,2}\S+' '' | string split -n ' ')) -le 1 ]" -a "(kubectx -l)"

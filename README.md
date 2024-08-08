@@ -18,9 +18,16 @@ Usage: kubectx [OPTIONS] [NAME]
 Change or list Kubernetes contexts
 
 Options:
-  -c, --current      Show the current context
-  -h, --help         This message
-  -i, --interactive  Select context interactively
+      --cache-dir         Set the cache directory
+  -e  --cache-expires-in  Set the cache expiration time
+  -c, --current           Show the current context
+      --no-cache          Do not use existing cache for context
+  -g, --global            Set context globally (write to ~/.kube/config)
+  -h, --help              This message
+  -i, --interactive       Select context interactively
+  -l, --list              Show all kubeconfig files
+  -p, --path              Show the kubeconfig path variable
+  -s, --show              Show the kubeconfig for a context
 ```
 
 ```text
