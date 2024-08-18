@@ -53,7 +53,8 @@ function __kubectx_set
 
     if [ ! -f "$cache_file" ] || [ $(math "$(date +%s) - $(stat -c'%Y' $cache_file)") -ge "$KUBECTX_CACHE_EXPIRES_IN" ]
         mkdir -p "$KUBECTX_CACHE_DIR"
-        __kubectx_get "$argv[1]" >"$cache_file"
+        __kubectx_get "$argv[1]" > "$cache_file"
+        chmod 0600 "$cache_file"
     end
 
     if [ -n "$_flag_g" ]
