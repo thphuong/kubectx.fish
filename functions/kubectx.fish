@@ -15,11 +15,13 @@ function __kubectx_ls
 end
 
 function __kubectx_path
+    set kubeconfig_path
+
     for config_file in $(__kubectx_ls)
-        set -a --path KUBECONFIG "$config_file"
+        set -a --path kubeconfig_path "$config_file"
     end
 
-    echo "$KUBECONFIG"
+    echo "$kubeconfig_path"
 end
 
 function __kubectx_current
