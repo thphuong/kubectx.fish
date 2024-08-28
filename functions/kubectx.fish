@@ -59,7 +59,7 @@ function __kubectx_set
         chmod 0600 "$cache_file"
     end
 
-    if [ -n "$_flag_g" ]
+    if [ -n "$_flag_global" ]
         if [ -f "$HOME/.kube/config" ]
             cp "$HOME/.kube/config" "$HOME/.kube/config.old"
         end
@@ -69,13 +69,30 @@ function __kubectx_set
     end
 
     set -gx KUBECONFIG "$cache_file"
+    echo "Switched to context '$argv[1]'"
 end
 
 function kubectx --description "Change or list kubernetes contexts"
-    argparse -X 1 -x 'c,g,l,s' -x 'c,g,p,s' -x 'c,i,l,s' -x 'c,i,p,s' h/help c/current g/global i/interactive l/list p/path s/show -- $argv
+    argparse \
+        -X 1 \
+        -x 'c,g,l,s' \
+        -x 'c,g,p,s' \
+        -x 'c,i,l,s' \
+        -x 'c,i,p,s' \
+        cache-dir \
+        e/cache-expires-in \
+        c/current \
+        f/no-cache \
+        g/global \
+        h/help \
+        i/interactive \
+        l/list \
+        p/path \
+        s/show \
+    -- $argv
     or return
 
-    if [ -n "$_flag_h" ]
+    if [ -n "$_flag_help" ]
         echo "Usage: $(status current-command) [OPTIONS] [NAME]"
         echo
         echo "Change or list Kubernetes contexts"
@@ -84,7 +101,7 @@ function kubectx --description "Change or list kubernetes contexts"
         echo "      --cache-dir         Set the cache directory"
         echo "  -e  --cache-expires-in  Set the cache expiration time"
         echo "  -c, --current           Show the current context"
-        echo "      --no-cache          Do not use existing cache for context"
+        echo "  -f, --no-cache          Do not use existing cache for context"
         echo "  -g, --global            Set context globally (write to ~/.kube/config)"
         echo "  -h, --help              This message"
         echo "  -i, --interactive       Select context interactively"
@@ -97,39 +114,41 @@ function kubectx --description "Change or list kubernetes contexts"
     set -x KUBECONFIG_PATH "$(__kubectx_path)"
     or return
 
-    if [ -n "$_cache_dir" ]
-        set -x KUBECTX_CACHE_DIR "$_cache_dir"
+    if [ -n "$_flag_cache_dir" ]
+        set -x KUBECTX_CACHE_DIR "$_flag_cache_dir"
     else
         set -x KUBECTX_CACHE_DIR "$HOME/.cache/kubectx"
     end
 
-    if [ -n "$_cache_expires_in" ]
-        set -x KUBECTX_CACHE_EXPIRES_IN "$_cache_expires_in"
+    if [ -n "$_flag_no_cache" ]
+        set -x KUBECTX_CACHE_EXPIRES_IN 0
+    else if [ -n "$_flag_cache_expires_in" ]
+        set -x KUBECTX_CACHE_EXPIRES_IN "$_flag_cache_expires_in"
     else
         set -x KUBECTX_CACHE_EXPIRES_IN 3600 # 1 hour
     end
 
-    if [ -n "$_flag_c" ]
+    if [ -n "$_flag_current" ]
         __kubectx_current
         return
     end
 
-    if [ -n "$_flag_l" ] && [ -n "$_flag_p" ]
+    if [ -n "$_flag_list" ] && [ -n "$_flag_path" ]
         __kubectx_ls
         return
     end
 
-    if [ -n "$_flag_l" ]
+    if [ -n "$_flag_list" ]
         __kubectx_all
         return
     end
 
-    if [ -n "$_flag_p" ]
+    if [ -n "$_flag_path" ]
         echo "$KUBECONFIG_PATH"
         return
     end
 
-    if [ -n "$_flag_s" ]
+    if [ -n "$_flag_show" ]
         set -l ctx_name "$argv[1]"
 
         test -n "$ctx_name"
@@ -150,7 +169,7 @@ function kubectx --description "Change or list kubernetes contexts"
             echo "$kube_contexts"
         end
 
-        if [ -n "$_flag_i" ] && command -v fzf >/dev/null
+        if [ -n "$_flag_interactive" ] && command -v fzf >/dev/null
             echo "$kube_contexts" \
                 | awk '/^'$current_context'$/{ sub($0, $0 " \033[0;32m(current)\033[0m") }1' \
                 | fzf --no-clear --ansi --no-sort --nth 1 --layout=reverse --height=50% --bind 'enter:become(echo {1})' \
@@ -160,6 +179,6 @@ function kubectx --description "Change or list kubernetes contexts"
             echo "$kube_contexts" | awk '/^'$current_context'$/{ sub($0, "\033[0;33m" $0 "\033[0m") }1'
         end
     else
-        __kubectx_set $_flag_g $argv
+        __kubectx_set $_flag_global $argv
     end
 end

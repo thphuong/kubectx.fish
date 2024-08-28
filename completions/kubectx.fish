@@ -1,8 +1,8 @@
 complete -f -c kubectx
-complete -f -c kubectx -l cache_dir -d "show the current namespace"
+complete -f -c kubectx -l cache-dir -d "show the current namespace"
 complete -f -c kubectx -a "-c --current" -d "show the current namespace"
 complete -f -c kubectx -l "-e --cache-expires-in" -d "show the current namespace"
-complete -f -c kubectx -l no-cache -d "do not use cache"
+complete -f -c kubectx -a "-f --no-cache" -d "do not use cache"
 complete -f -c kubectx -a "-g --global" -d "set the context globally"
 complete -f -c kubectx -a "-h --help" -d "show the help message"
 complete -f -c kubectx -a "-i --interactive" -d "select context interactively"

@@ -16,7 +16,7 @@ end
 function kubens --description "Change or list kubernetes namespaces"
     argparse -X 1 h/help c/current i/interactive l/list -- $argv
 
-    if [ -n "$_flag_h" ]
+    if [ -n "$_flag_help" ]
         echo "Usage: $(status current-command) [OPTIONS] [NAME]"
         echo
         echo "Change or list Kubernetes namespaces"
@@ -32,12 +32,12 @@ function kubens --description "Change or list kubernetes namespaces"
     kubectx --current 1>/dev/null
     or return
 
-    if [ -n "$_flag_c" ]
+    if [ -n "$_flag_current" ]
         __kubens_current
         return
     end
 
-    if [ -n "$_flag_l" ]
+    if [ -n "$_flag_list" ]
         __kubens_all
         return
     end
@@ -48,7 +48,7 @@ function kubens --description "Change or list kubernetes namespaces"
 
         set -l current_ns "$(__kubens_current)" 2>/dev/null
 
-        if [ -n "$_flag_i" ]
+        if [ -n "$_flag_interactive" ]
             echo "$kube_namespaces" \
                 | awk '/^'$current_ns'$/{ sub($0, $0 " \033[0;32m(current)\033[0m") }1' \
                 | fzf --no-clear --ansi --no-sort --nth 1 --layout=reverse --height=50% --bind 'enter:become(echo {1})' \
