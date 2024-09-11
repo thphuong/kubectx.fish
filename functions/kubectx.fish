@@ -49,14 +49,20 @@ function __kubectx_get
 end
 
 function __kubectx_set
-    argparse -N 1 -X 1 g/global -- $argv
+    argparse -N 1 -X 1 g/global n/namespace= -- $argv
+    or return
 
-    set cache_file "$KUBECTX_CACHE_DIR/$argv[1].yaml"
+    if [ -z "$_flag_namespace" ]
+        set _flag_namespace "default"
+    end
+
+    set cache_file "$KUBECTX_CACHE_DIR/$argv[1]~$_flag_namespace.yaml"
 
     if [ ! -f "$cache_file" ] || [ $(math "$(date +%s) - $(stat -c'%Y' $cache_file)") -ge "$KUBECTX_CACHE_EXPIRES_IN" ]
         mkdir -p "$KUBECTX_CACHE_DIR"
         __kubectx_get "$argv[1]" > "$cache_file"
         chmod 0600 "$cache_file"
+        KUBECONFIG="$cache_file" kubectl config set-context --current --namespace="$_flag_namespace" 1>/dev/null
     end
 
     if [ -n "$_flag_global" ]
@@ -66,19 +72,24 @@ function __kubectx_set
 
         ln -s "$cache_file" "$HOME/.kube/config"
         echo "Context '$argv[1]' written to ~/.kube/config"
+        set kubeconfig_file "$HOME/.kube/config"
+    else
+        set kubeconfig_file "$cache_file"
     end
 
-    set -gx KUBECONFIG "$cache_file"
+    set -gx KUBECONFIG "$kubeconfig_file"
     echo "Switched to context '$argv[1]'"
 end
 
 function kubectx --description "Change or list kubernetes contexts"
     argparse \
         -X 1 \
-        -x 'c,g,l,s' \
-        -x 'c,g,p,s' \
-        -x 'c,i,l,s' \
-        -x 'c,i,p,s' \
+        -x 'i,c,l,s' \
+        -x 'i,c,p,s' \
+        -x 'g,c,l,s' \
+        -x 'g,c,p,s' \
+        -x 'n,c,l,s' \
+        -x 'n,c,p,s' \
         cache-dir \
         e/cache-expires-in \
         c/current \
@@ -87,6 +98,7 @@ function kubectx --description "Change or list kubernetes contexts"
         h/help \
         i/interactive \
         l/list \
+        n/namespace= \
         p/path \
         s/show \
     -- $argv
@@ -106,6 +118,7 @@ function kubectx --description "Change or list kubernetes contexts"
         echo "  -h, --help              This message"
         echo "  -i, --interactive       Select context interactively"
         echo "  -l, --list              Show all kubeconfig files"
+        echo "  -n, --namespace         Switch to the specified namespace"
         echo "  -p, --path              Show the kubeconfig path variable"
         echo "  -s, --show              Show the kubeconfig for a context"
         return
@@ -159,6 +172,18 @@ function kubectx --description "Change or list kubernetes contexts"
         return
     end
 
+    if [ -n "$_flag_global" ]
+        set -a passthrough_args "$_flag_global"
+    end
+
+    if [ -n "$_flag_namespace" ]
+        if [ (count $argv) = 0 ]
+            set -a argv "$(__kubectx_current 2>/dev/null)"
+        end
+
+        set -a passthrough_args "-n" "$_flag_namespace"
+    end
+
     if [ (count $argv) = 0 ]
         set kube_contexts "$(__kubectx_all)"
         or return
@@ -174,11 +199,11 @@ function kubectx --description "Change or list kubernetes contexts"
                 | awk '/^'$current_context'$/{ sub($0, $0 " \033[0;32m(current)\033[0m") }1' \
                 | fzf --no-clear --ansi --no-sort --nth 1 --layout=reverse --height=50% --bind 'enter:become(echo {1})' \
                 | read -l choice
-            and __kubectx_set $choice
+            and __kubectx_set $passthrough_args $choice
         else
             echo "$kube_contexts" | awk '/^'$current_context'$/{ sub($0, "\033[0;33m" $0 "\033[0m") }1'
         end
     else
-        __kubectx_set $_flag_global $argv
+        __kubectx_set $passthrough_args $argv[1]
     end
 end

@@ -6,11 +6,11 @@ function __kubens_current
 end
 
 function __kubens_all
-    kubectl get namespace -oname | cut -d/ -f2
+    kubectl get namespace -oname | cut -d/ -f2 | sort
 end
 
 function __kubens_set
-    kubectl config set-context --current --namespace=$argv[1]
+    kubectx --namespace=$argv[1]
 end
 
 function kubens --description "Change or list kubernetes namespaces"
