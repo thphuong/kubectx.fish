@@ -58,7 +58,14 @@ function __kubectx_set
 
     set cache_file "$KUBECTX_CACHE_DIR/$argv[1]~$_flag_namespace.yaml"
 
-    if [ ! -f "$cache_file" ] || [ $(math "$(date +%s) - $(stat -c'%Y' $cache_file)") -ge "$KUBECTX_CACHE_EXPIRES_IN" ]
+    set cache_file_mtime
+    if [ $(uname -s | tr '[:upper:]' '[:lower:]') = "darwin" ]
+        set cache_file_mtime (stat -f'%m' $cache_file)
+    else
+        set cache_file_mtime (stat -c'%Y' $cache_file)
+    end
+
+    if [ ! -f "$cache_file" ] || [ $(math "$(date +%s) - $cache_file_mtime") -ge "$KUBECTX_CACHE_EXPIRES_IN" ]
         mkdir -p "$KUBECTX_CACHE_DIR"
         __kubectx_get "$argv[1]" > "$cache_file"
         chmod 0600 "$cache_file"
