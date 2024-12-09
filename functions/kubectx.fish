@@ -59,7 +59,9 @@ function __kubectx_set
     set cache_file "$KUBECTX_CACHE_DIR/$argv[1]~$_flag_namespace.yaml"
 
     set cache_file_mtime
-    if [ $(uname -s | tr '[:upper:]' '[:lower:]') = "darwin" ]
+    if [ ! -f "$cache_file" ]
+        set cache_file_mtime 0
+    else if [ $(uname -s | tr '[:upper:]' '[:lower:]') = "darwin" ]
         set cache_file_mtime (stat -f'%m' $cache_file)
     else
         set cache_file_mtime (stat -c'%Y' $cache_file)
