@@ -48,6 +48,19 @@ function __kubectx_get
     KUBECONFIG="$KUBECONFIG_PATH" kubectl config view --raw --minify --context "$argv[1]" -oyaml | $prettier
 end
 
+function __kubectx_resolve_ns --description "Resolve last namespace for a context from .current symlink"
+    test -n "$argv[1]"
+    or begin; echo default; return; end
+    set -l symlink "$KUBECTX_CACHE_DIR/$argv[1].current"
+    set -l target (readlink "$symlink" 2>/dev/null)
+    or begin; echo default; return; end
+    if string match -r '~(.+)\.yaml$' $target >/dev/null
+        echo $match[1]
+    else
+        echo default
+    end
+end
+
 function __kubectx_set
     argparse -N 1 -X 1 g/global n/namespace= -- $argv
     or return
@@ -73,6 +86,10 @@ function __kubectx_set
         chmod 0600 "$cache_file"
         KUBECONFIG="$cache_file" kubectl config set-context --current --namespace="$_flag_namespace" 1>/dev/null
     end
+
+    # Update .current symlink to track last namespace
+    set -l current_symlink "$KUBECTX_CACHE_DIR/$argv[1].current"
+    ln -sf (basename "$cache_file") "$current_symlink"
 
     if [ -n "$_flag_global" ]
         if [ -f "$HOME/.kube/config" ]
@@ -209,11 +226,25 @@ function kubectx --description "Change or list kubernetes contexts"
                 | awk '/^'$current_context'$/{ sub($0, $0 " \033[0;32m(current)\033[0m") }1' \
                 | fzf --no-clear --ansi --no-sort --nth 1 --layout=reverse --height=50% --bind 'enter:become(echo {1})' \
                 | read -l choice
-            and __kubectx_set $passthrough_args $choice
+            and begin
+                if [ -z "$_flag_namespace" ]
+                    set -l resolved_ns (__kubectx_resolve_ns $choice)
+                    if [ "$resolved_ns" != default ]
+                        set -a passthrough_args "-n" "$resolved_ns"
+                    end
+                end
+                __kubectx_set $passthrough_args $choice
+            end
         else
             echo "$kube_contexts" | awk '/^'$current_context'$/{ sub($0, "\033[0;33m" $0 "\033[0m") }1'
         end
     else
+        if [ -z "$_flag_namespace" ]
+            set -l resolved_ns (__kubectx_resolve_ns $argv[1])
+            if [ "$resolved_ns" != default ]
+                set -a passthrough_args "-n" "$resolved_ns"
+            end
+        end
         __kubectx_set $passthrough_args $argv[1]
     end
 end
