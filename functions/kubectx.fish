@@ -54,8 +54,9 @@ function __kubectx_resolve_ns --description "Resolve last namespace for a contex
     set -l symlink "$KUBECTX_CACHE_DIR/$argv[1].current"
     set -l target (readlink "$symlink" 2>/dev/null)
     or begin; echo default; return; end
-    if string match -r '~(.+)\.yaml$' $target >/dev/null
-        echo $match[1]
+    set -l parts (string match -r '~(.+)\.yaml$' $target)
+    if test $status -eq 0
+        echo $parts[2]
     else
         echo default
     end
