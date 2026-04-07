@@ -99,8 +99,8 @@ function kubectx --description "Change or list kubernetes contexts"
         -x 'g,c,p,s' \
         -x 'n,c,l,s' \
         -x 'n,c,p,s' \
-        cache-dir \
-        e/cache-expires-in \
+        cache-dir= \
+        e/cache-expires-in= \
         c/current \
         f/no-cache \
         g/global \
@@ -199,8 +199,9 @@ function kubectx --description "Change or list kubernetes contexts"
 
         set current_context "$(__kubectx_current 2>/dev/null)"
 
-        if [ -z "current_context" ]
+        if [ -z "$current_context" ]
             echo "$kube_contexts"
+            return
         end
 
         if [ -n "$_flag_interactive" ] && command -v fzf >/dev/null
