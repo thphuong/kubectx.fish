@@ -48,9 +48,22 @@ function __kubectx_get
     KUBECONFIG="$KUBECONFIG_PATH" kubectl config view --raw --minify --context "$argv[1]" -oyaml | $prettier
 end
 
-function __kubectx_resolve_ns --description "Resolve last namespace for a context from .current symlink"
+function __kubectx_sanitize_name --description "Sanitize context name for use as fish variable suffix"
+    string replace -ra '[^a-zA-Z0-9_]' '_' -- $argv[1]
+end
+
+function __kubectx_resolve_ns --description "Resolve last namespace for a context"
     test -n "$argv[1]"
     or begin; echo default; return; end
+
+    # Priority 1: per-session shell variable
+    set -l var_name __kubectx_ns_map_(__kubectx_sanitize_name $argv[1])
+    if set -q $var_name
+        echo $$var_name
+        return
+    end
+
+    # Priority 2: cross-session .current symlink (direnv, fresh shells)
     set -l symlink "$KUBECTX_CACHE_DIR/$argv[1].current"
     set -l target (readlink "$symlink" 2>/dev/null)
     or begin; echo default; return; end
@@ -91,6 +104,9 @@ function __kubectx_set
     # Update .current symlink to track last namespace
     set -l current_symlink "$KUBECTX_CACHE_DIR/$argv[1].current"
     ln -sf (basename "$cache_file") "$current_symlink"
+
+    # Update per-session namespace memory
+    set -g __kubectx_ns_map_(__kubectx_sanitize_name $argv[1]) "$_flag_namespace"
 
     if [ -n "$_flag_global" ]
         if [ -f "$HOME/.kube/config" ]
